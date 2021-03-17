@@ -8,8 +8,8 @@ terraform {
 }
 
 provider "aws" {
-  profile = "devops-rnd"
-  region  = "eu-west-1"
+  profile = "qa"
+  region  = "eu-central-1"
 }
 
 variable "project-name" {
@@ -121,7 +121,7 @@ resource "aws_iot_topic_rule" "connect-rule" {
   name        = "connect_state_change"
   description = "Sends a message to a lambda when a client connects or disconnects"  
   enabled     = true
-  sql         = "SELECT * FROM '$aws/events/presence/+'"
+  sql         = "SELECT * FROM '$aws/events/presence/#'"
   sql_version = "2016-03-23"
 
   lambda {
@@ -137,7 +137,7 @@ resource "aws_iot_topic_rule" "disconnect-rule" {
   name        = "client_disconnect"
   description = "Puts a disconnect in the delayed queue"
   enabled     = true
-  sql         = "SELECT * FROM '$aws/events/presence/disconnected/'" 
+  sql         = "SELECT * FROM '$aws/events/presence/disconnected/+'"
   sql_version = "2016-03-23"
 
   sqs {
@@ -204,6 +204,11 @@ resource "aws_lambda_permission" "allow_cloudwatch" {
   source_arn    = aws_iot_topic_rule.connect-rule.arn
 }
 
+resource "aws_cloudwatch_log_group" "connect-state-writer-lambda-logs" {
+  name              = "/aws/lambda/${aws_lambda_function.connect-state-writer-lambda.function_name}"
+  retention_in_days = 14
+}
+
 resource "aws_lambda_function" "connect-state-check-lambda" {
   filename      = "IotClientDisconnectAlertLambda-1.0-SNAPSHOT.zip"
   source_code_hash = filebase64sha256("IotClientDisconnectAlertLambda-1.0-SNAPSHOT.zip")
@@ -226,6 +231,10 @@ resource "aws_lambda_function" "connect-state-check-lambda" {
   }
 }
 
+resource "aws_cloudwatch_log_group" "connect-state-check-lambda-logs" {
+  name              = "/aws/lambda/${aws_lambda_function.connect-state-check-lambda.function_name}"
+  retention_in_days = 14
+}
 
 resource "aws_lambda_event_source_mapping" "event_source_mapping" {
   event_source_arn = aws_sqs_queue.delayed-queue.arn
