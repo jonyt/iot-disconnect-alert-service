@@ -33,7 +33,7 @@ public class DisconnectMessage {
         this.sessionIdentifier = input.get("sessionIdentifier");
         this.principalIdentifier = input.get("principalIdentifier");
         this.clientInitiatedDisconnect = input.get("clientInitiatedDisconnect");
-        this.disconnectReason = input.get("disconnectReason") == null ? "none-connect" : input.get("disconnectReason");
+        this.disconnectReason = input.get("disconnectReason") == null ? "connect" : input.get("disconnectReason");
         this.versionNumber = input.get("versionNumber");
     }
 
